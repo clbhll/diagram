@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media Player Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f2f2;      /* figure ground */
+    --surface: #ffffff; /* object fill */
+    --mid: #d4d4d4;     /* a part that reads as a different material */
+    --ink: #111111;     /* outlines, focus fill, dims */
+    --muted: #666666;   /* captions, notes, labels, paths */
+    --faint: #bdbdbd;   /* extension lines, axes, placeholders, rule */
+    --on-ink: #ffffff;  /* text on the focus fill */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1c1c; --surface: #0e0e0e; --mid: #4a4a4a; --ink: #ededed;
+      --muted: #a3a3a3; --faint: #5a5a5a; --on-ink: #111111;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1c1c; --surface: #0e0e0e; --mid: #4a4a4a; --ink: #ededed;
+    --muted: #a3a3a3; --faint: #5a5a5a; --on-ink: #111111;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 32px 16px; display: grid; gap: 32px; justify-items: center; }
+  figure { margin: 0; width: 100%; max-width: 1440px; }
+  svg { display: block; width: 100%; height: auto; background: var(--bg); border-radius: 12px; }
+
+  /* Line language: three weights, nothing in between. */
+  .obj   { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+  .part  { fill: var(--surface); stroke: var(--ink); stroke-width: 1.25; }
+  .mat   { fill: var(--mid); stroke: var(--ink); stroke-width: 1.25; }
+  .focus { fill: var(--ink); stroke: var(--ink); stroke-width: 2; }
+  .slot  { fill: none; stroke: var(--faint); stroke-width: 1.25; stroke-dasharray: 5 4; }
+  .hatch { stroke: var(--ink); stroke-width: 1.25; } /* no fill rule: keeps fill="url(#…)" */
+  .dim   { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .arrow { fill: var(--ink); }
+  .ext   { stroke: var(--faint); stroke-width: 1; }
+  .axis  { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 18 4 2 4; fill: none; }
+  .lead  { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .dot   { fill: var(--ink); }
+  .rule  { stroke: var(--faint); stroke-width: 2; }
+  .iso * { vector-effect: non-scaling-stroke; } /* oblique layers keep true line weights */
+
+  .math  { font: 500 17px "IBM Plex Mono", ui-monospace, monospace; fill: var(--ink); }
+  .tag   { font: 500 16px "IBM Plex Mono", ui-monospace, monospace; fill: var(--ink); }
+  .cap   { font: 400 16px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .in    { font: 400 13px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .on    { fill: var(--on-ink); }
+  .label { font: 400 19px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .note  { font: 400 16px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .noteN { font: 500 16px Inter, Helvetica, Arial, sans-serif; fill: var(--ink); }
+  .box   { fill: var(--surface); stroke: var(--ink); stroke-width: 1.25; }
+</style>
+</head>
+<body>
+
+<figure><svg id="front" viewBox="0 0 1440 900" role="img" aria-label="Media player, front view at 2:1: 352 by 192 card, 96 artwork, track column, three 40 controls with pause filled, and a scrubber."></svg></figure>
+
+<script>
+/* ---------- Diagram kit (sheet units = viewBox px) ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+let S, HATCH; // current svg, its hatch pattern id
+function begin(id) {
+  S = document.getElementById(id);
+  const d = el('defs', {});
+  const p = el('pattern', { id: id + '-hatch', width: 8, height: 8, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, d);
+  el('line', { x1: 0, y1: 0, x2: 0, y2: 8, style: 'stroke:var(--ink);stroke-width:1' }, p);
+  return (HATCH = `url(#${id}-hatch)`);
+}
+function el(tag, attrs, parent = S) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  parent.appendChild(n); return n;
+}
+const rect = (x, y, w, h, r, cls, extra = {}, parent) => el('rect', { x, y, width: w, height: h, rx: r, class: cls, ...extra }, parent);
+const line = (x1, y1, x2, y2, cls, parent) => el('line', { x1, y1, x2, y2, class: cls }, parent);
+function text(x, y, s, cls, anchor = 'middle', extra = {}) {
+  const t = el('text', { x, y, class: cls, 'text-anchor': anchor, 'dominant-baseline': 'middle', ...extra });
+  t.textContent = s; return t;
+}
+// Dimension: small filled arrowheads (default) or end ticks ({ ticks: true }, physical products).
+// Horizontal when y1 === y2, else vertical. `ext` draws faint extension lines back to that coordinate.
+function dim(x1, y1, x2, y2, label, { side = 'above', ext = null, ticks = false } = {}) {
+  const hz = y1 === y2, A = 8, B = 3.5, T = 9;
+  line(x1, y1, x2, y2, 'dim');
+  if (ticks) {
+    if (hz) { line(x1, y1 - T, x1, y1 + T, 'dim'); line(x2, y2 - T, x2, y2 + T, 'dim'); }
+    else    { line(x1 - T, y1, x1 + T, y1, 'dim'); line(x2 - T, y2, x2 + T, y2, 'dim'); }
+  } else {
+    const head = (x, y, ux, uy) => el('path', { d: `M${x} ${y} L${x - ux * A - uy * B} ${y - uy * A + ux * B} L${x - ux * A + uy * B} ${y - uy * A - ux * B}Z`, class: 'arrow' });
+    // Spans too short for two heads get them outside, pointing in.
+    const short = Math.hypot(x2 - x1, y2 - y1) < 2 * A + 6, s = short ? -1 : 1;
+    if (hz) { head(x1, y1, -s, 0); head(x2, y2, s, 0); } else { head(x1, y1, 0, -s); head(x2, y2, 0, s); }
+  }
+  if (hz) {
+    if (ext != null) { line(x1, ext, x1, y1 + (ext > y1 ? 6 : -6), 'ext'); line(x2, ext, x2, y2 + (ext > y1 ? 6 : -6), 'ext'); }
+    text((x1 + x2) / 2, y1 + (side === 'above' ? -20 : 22), label, 'math');
+  } else {
+    if (ext != null) { line(ext, y1, x1 + (ext > x1 ? 6 : -6), y1, 'ext'); line(ext, y2, x1 + (ext > x1 ? 6 : -6), y2, 'ext'); }
+    const right = side === 'right';
+    text(x1 + (right ? 18 : -18), (y1 + y2) / 2, label, 'math', right ? 'start' : 'end');
+  }
+}
+// Direct label: dot on the feature, leader to a short shoulder, caps name. Label sits at (lx, ly).
+function label(px, py, lx, ly, s, side = 'left') {
+  const sh = 22, dir = side === 'left' ? 1 : -1, kx = lx + dir * (sh + 12);
+  el('path', { d: `M${px} ${py} L${kx} ${ly} L${lx + dir * 12} ${ly}`, class: 'lead' });
+  el('circle', { cx: px, cy: py, r: 3, class: 'dot' });
+  text(lx, ly + 1, s, 'label', side === 'left' ? 'end' : 'start');
+}
+// Boxed note number that matches a line in the notes list.
+function nb(x, y, n) { rect(x - 11, y - 11, 22, 22, 2, 'box'); text(x, y + 1, n, 'tag'); }
+// Circled part number (flat side elevation of a physical product).
+function partTag(px, py, cx, cy, n, s) {
+  el('path', { d: `M${px} ${py} L${cx - 22} ${cy}`, class: 'lead' });
+  el('circle', { cx, cy, r: 22, class: 'box' });
+  text(cx, cy + 1, n, 'tag');
+  text(cx + 40, cy + 1, s, 'label', 'start');
+}
+function notes(y0, items) {
+  line(112, y0, 1328, y0, 'rule');
+  items.forEach((s, i) => { const y = y0 + 50 + i * 38; text(112, y, i + 1, 'noteN', 'start'); text(140, y, s, 'note', 'start'); });
+}
+// Oblique projection for exploded stacks. Draw each layer in its own flat (x, y) units inside layer(z);
+// P(x, y, z) gives the screen point for projection lines and label dots.
+const OB = { a: 0.94, b: 0.2, c: -0.5, d: 0.6, ox: 0, oy: 0 };
+const P = (x, y, z) => [OB.ox + OB.a * x + OB.c * y, OB.oy - z + OB.b * x + OB.d * y];
+const layer = z => el('g', { class: 'iso', transform: `matrix(${OB.a} ${OB.b} ${OB.c} ${OB.d} ${OB.ox} ${OB.oy - z})` });
+
+/* ---------- Figure 1 · front view at 2:1 (source 352 × 192) ---------- */
+begin('front');
+const k = 2, X = 368, Y = 150, W = 352 * k, H = 192 * k, PAD = 24 * k;
+const cx = X + PAD, cy = Y + PAD;                       // content origin
+rect(X, Y, W, H, 24 * k, 'obj');                    // card R 24
+// artwork 96, R 12
+rect(cx, cy, 96 * k, 96 * k, 12 * k, 'part'); text(cx + 48 * k, cy + 48 * k, 'Artwork', 'in');
+// main column: track slots + controls
+const mx = cx + 120 * k, mw = 184 * k;
+rect(mx, cy + 4, mw, 40, 4, 'slot');  text(mx + 12, cy + 24, 'Title', 'in', 'start');
+rect(mx, cy + 52, mw, 40, 4, 'slot'); text(mx + 12, cy + 72, 'Artist', 'in', 'start');
+const ccy = cy + 76 * k;
+[0, 1, 2].forEach(i => el('circle', { cx: mx + 20 * k + i * 48 * k, cy: ccy, r: 20 * k, class: i === 1 ? 'focus' : 'part' }));
+// scrubber: 4 bar centered in an 8 row, 8 gap, 16 times row
+const sy = cy + 112 * k;
+rect(cx, sy + 2 * k, 304 * k, 4 * k, 2 * k, 'part');
+rect(cx, sy + 2 * k, 134 * k, 4 * k, 2 * k, 'part', { style: 'fill:var(--muted)' });
+rect(cx, sy + 16 * k, 56, 32, 4, 'slot');            text(cx + 28, sy + 16 * k + 16, 'Time', 'in');
+rect(cx + 304 * k - 66, sy + 16 * k, 66, 32, 4, 'slot'); text(cx + 304 * k - 33, sy + 16 * k + 16, 'Time', 'in');
+// dims
+dim(X, 100, X + W, 100, '352', { ext: Y - 6 });
+dim(X + W + 48, Y, X + W + 48, Y + H, '192', { side: 'right', ext: X + W + 6 });
+const by = Y + H + 50;
+dim(X, by, cx, by, '24', { side: 'below' });
+dim(cx, by, cx + 96 * k, by, '96', { side: 'below' });
+dim(cx + 96 * k, by, mx, by, '24', { side: 'below' });
+dim(mx, by, X + W - PAD, by, 'flex', { side: 'below' });
+dim(X + W - PAD, by, X + W, by, '24', { side: 'below' });
+[X, cx, cx + 96 * k, mx, X + W - PAD, X + W].forEach(x => line(x, Y + H + 6, x, by - 12, 'ext'));
+// note markers
+nb(X + W / 2 + 44, 80, 1);
+nb(cx + 96 * k + PAD / 2, cy + 20, 2);
+nb(mx + 136 * k + 28, ccy, 3);
+nb(X + W - PAD / 2, sy + 4 * k, 4);
+text(X + W / 2, Y + H + 130, 'Front · 2:1', 'cap');
+notes(700, [
+  '24 padding and 24 radius on an 8 grid. Height follows content',
+  'Artwork is a fixed 96 square, radius 12. The track column takes the rest',
+  'Controls are 40 circles, 8 apart. Pause is the only filled one',
+  'Scrubber: a 4 bar in an 8 row, an 8 gap, then a 16 row of times',
+]);
+
+</script>
+</body>
+</html>

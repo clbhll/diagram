@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f2f2;      /* figure ground */
+    --surface: #ffffff; /* object fill */
+    --mid: #d4d4d4;     /* a part that reads as a different material */
+    --ink: #111111;     /* outlines, focus fill, dims */
+    --muted: #666666;   /* captions, notes, labels, paths */
+    --faint: #bdbdbd;   /* extension lines, axes, placeholders, rule */
+    --on-ink: #ffffff;  /* text on the focus fill */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1c1c; --surface: #0e0e0e; --mid: #4a4a4a; --ink: #ededed;
+      --muted: #a3a3a3; --faint: #5a5a5a; --on-ink: #111111;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1c1c; --surface: #0e0e0e; --mid: #4a4a4a; --ink: #ededed;
+    --muted: #a3a3a3; --faint: #5a5a5a; --on-ink: #111111;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { padding: 32px 16px; display: grid; gap: 32px; justify-items: center; }
+  figure { margin: 0; width: 100%; max-width: 1440px; }
+  svg { display: block; width: 100%; height: auto; background: var(--bg); border-radius: 12px; }
+
+  /* Line language: three weights, nothing in between. */
+  .obj   { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+  .part  { fill: var(--surface); stroke: var(--ink); stroke-width: 1.25; }
+  .mat   { fill: var(--mid); stroke: var(--ink); stroke-width: 1.25; }
+  .focus { fill: var(--ink); stroke: var(--ink); stroke-width: 2; }
+  .slot  { fill: none; stroke: var(--faint); stroke-width: 1.25; stroke-dasharray: 5 4; }
+  .hatch { stroke: var(--ink); stroke-width: 1.25; } /* no fill rule: keeps fill="url(#…)" */
+  .dim   { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .arrow { fill: var(--ink); }
+  .ext   { stroke: var(--faint); stroke-width: 1; }
+  .axis  { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 18 4 2 4; fill: none; }
+  .lead  { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .dot   { fill: var(--ink); }
+  .rule  { stroke: var(--faint); stroke-width: 2; }
+  .iso * { vector-effect: non-scaling-stroke; } /* oblique layers keep true line weights */
+
+  .math  { font: 500 17px "IBM Plex Mono", ui-monospace, monospace; fill: var(--ink); }
+  .tag   { font: 500 16px "IBM Plex Mono", ui-monospace, monospace; fill: var(--ink); }
+  .cap   { font: 400 16px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .in    { font: 400 13px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .on    { fill: var(--on-ink); }
+  .label { font: 400 19px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  .note  { font: 400 16px Inter, Helvetica, Arial, sans-serif; fill: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .noteN { font: 500 16px Inter, Helvetica, Arial, sans-serif; fill: var(--ink); }
+  .box   { fill: var(--surface); stroke: var(--ink); stroke-width: 1.25; }
+</style>
+</head>
+<body>
+
+<figure><svg id="front" viewBox="0 0 1440 700" role="img" aria-label="Card, front view: 600 wide reference card with a 64 header, a body well that hugs content, and a 64 footer with a solid action pill."></svg></figure>
+<figure><svg id="stack" viewBox="0 0 1440 900" role="img" aria-label="Card, exploded oblique view: slots, body well, container and shadow layers, top to bottom."></svg></figure>
+
+<script>
+/* ---------- Diagram kit (sheet units = viewBox px) ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+let S, HATCH; // current svg, its hatch pattern id
+function begin(id) {
+  S = document.getElementById(id);
+  const d = el('defs', {});
+  const p = el('pattern', { id: id + '-hatch', width: 8, height: 8, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, d);
+  el('line', { x1: 0, y1: 0, x2: 0, y2: 8, style: 'stroke:var(--ink);stroke-width:1' }, p);
+  return (HATCH = `url(#${id}-hatch)`);
+}
+function el(tag, attrs, parent = S) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  parent.appendChild(n); return n;
+}
+const rect = (x, y, w, h, r, cls, extra = {}, parent) => el('rect', { x, y, width: w, height: h, rx: r, class: cls, ...extra }, parent);
+const line = (x1, y1, x2, y2, cls, parent) => el('line', { x1, y1, x2, y2, class: cls }, parent);
+function text(x, y, s, cls, anchor = 'middle', extra = {}) {
+  const t = el('text', { x, y, class: cls, 'text-anchor': anchor, 'dominant-baseline': 'middle', ...extra });
+  t.textContent = s; return t;
+}
+// Dimension: small filled arrowheads (default) or end ticks ({ ticks: true }, physical products).
+// Horizontal when y1 === y2, else vertical. `ext` draws faint extension lines back to that coordinate.
+function dim(x1, y1, x2, y2, label, { side = 'above', ext = null, ticks = false } = {}) {
+  const hz = y1 === y2, A = 8, B = 3.5, T = 9;
+  line(x1, y1, x2, y2, 'dim');
+  if (ticks) {
+    if (hz) { line(x1, y1 - T, x1, y1 + T, 'dim'); line(x2, y2 - T, x2, y2 + T, 'dim'); }
+    else    { line(x1 - T, y1, x1 + T, y1, 'dim'); line(x2 - T, y2, x2 + T, y2, 'dim'); }
+  } else {
+    const head = (x, y, ux, uy) => el('path', { d: `M${x} ${y} L${x - ux * A - uy * B} ${y - uy * A + ux * B} L${x - ux * A + uy * B} ${y - uy * A - ux * B}Z`, class: 'arrow' });
+    // Spans too short for two heads get them outside, pointing in.
+    const short = Math.hypot(x2 - x1, y2 - y1) < 2 * A + 6, s = short ? -1 : 1;
+    if (hz) { head(x1, y1, -s, 0); head(x2, y2, s, 0); } else { head(x1, y1, 0, -s); head(x2, y2, 0, s); }
+  }
+  if (hz) {
+    if (ext != null) { line(x1, ext, x1, y1 + (ext > y1 ? 6 : -6), 'ext'); line(x2, ext, x2, y2 + (ext > y1 ? 6 : -6), 'ext'); }
+    text((x1 + x2) / 2, y1 + (side === 'above' ? -20 : 22), label, 'math');
+  } else {
+    if (ext != null) { line(ext, y1, x1 + (ext > x1 ? 6 : -6), y1, 'ext'); line(ext, y2, x1 + (ext > x1 ? 6 : -6), y2, 'ext'); }
+    const right = side === 'right';
+    text(x1 + (right ? 18 : -18), (y1 + y2) / 2, label, 'math', right ? 'start' : 'end');
+  }
+}
+// Direct label: dot on the feature, leader to a short shoulder, caps name. Label sits at (lx, ly).
+function label(px, py, lx, ly, s, side = 'left') {
+  const sh = 22, dir = side === 'left' ? 1 : -1, kx = lx + dir * (sh + 12);
+  el('path', { d: `M${px} ${py} L${kx} ${ly} L${lx + dir * 12} ${ly}`, class: 'lead' });
+  el('circle', { cx: px, cy: py, r: 3, class: 'dot' });
+  text(lx, ly + 1, s, 'label', side === 'left' ? 'end' : 'start');
+}
+// Boxed note number that matches a line in the notes list.
+function nb(x, y, n) { rect(x - 11, y - 11, 22, 22, 2, 'box'); text(x, y + 1, n, 'tag'); }
+// Circled part number (flat side elevation of a physical product).
+function partTag(px, py, cx, cy, n, s) {
+  el('path', { d: `M${px} ${py} L${cx - 22} ${cy}`, class: 'lead' });
+  el('circle', { cx, cy, r: 22, class: 'box' });
+  text(cx, cy + 1, n, 'tag');
+  text(cx + 40, cy + 1, s, 'label', 'start');
+}
+function notes(y0, items) {
+  line(112, y0, 1328, y0, 'rule');
+  items.forEach((s, i) => { const y = y0 + 50 + i * 38; text(112, y, i + 1, 'noteN', 'start'); text(140, y, s, 'note', 'start'); });
+}
+// Oblique projection for exploded stacks. Draw each layer in its own flat (x, y) units inside layer(z);
+// P(x, y, z) gives the screen point for projection lines and label dots.
+const OB = { a: 0.94, b: 0.2, c: -0.5, d: 0.6, ox: 0, oy: 0 };
+const P = (x, y, z) => [OB.ox + OB.a * x + OB.c * y, OB.oy - z + OB.b * x + OB.d * y];
+const layer = z => el('g', { class: 'iso', transform: `matrix(${OB.a} ${OB.b} ${OB.c} ${OB.d} ${OB.ox} ${OB.oy - z})` });
+
+/* ---------- Figure 1 · front view (1:1, W = 600 reference) ---------- */
+begin('front');
+const X = 420, Y = 170, W = 600, H1 = 64, BODY = 100, H2 = 64, Hh = H1 + BODY + H2;
+rect(X, Y, W, Hh, 16, 'obj');                                   // container R 16
+line(X, Y + H1, X + W, Y + H1, 'ext'); line(X, Y + H1 + BODY, X + W, Y + H1 + BODY, 'ext');
+// header: lead 16 · title slot (flex) · trail (hug)
+rect(X + 14, Y + 24, 16, 16, 2, 'part');
+rect(X + 38, Y + 21, 484, 22, 4, 'slot');  text(X + 50, Y + 33, 'Title', 'in', 'start');
+rect(X + W - 14 - 64, Y + 21, 64, 22, 11, 'part');
+// body well: inset 4, radius 11, content slots inside 12 pad
+rect(X + 4, Y + H1 + 4, W - 8, BODY - 8, 11, 'part');
+rect(X + 16, Y + H1 + 16, W - 32, 32, 4, 'slot'); text(X + W / 2, Y + H1 + 33, 'Content', 'in');
+rect(X + 16, Y + H1 + 60, W - 32, 24, 4, 'slot');
+// footer: meta slot (flex, wraps) · action (hug) as the focus
+rect(X + 14, Y + H1 + BODY + 21, 464, 22, 4, 'slot'); text(X + 26, Y + H1 + BODY + 33, 'Meta', 'in', 'start');
+rect(X + W - 14 - 96, Y + H1 + BODY + 14, 96, 36, 18, 'focus'); text(X + W - 62, Y + H1 + BODY + 33, 'Action', 'in on');
+// dims: only what the reader needs
+dim(X, 112, X + W, 112, 'W = 420–680', { ext: Y - 6 });
+dim(370, Y, 370, Y + H1, '64', { ext: X - 6 });
+dim(370, Y + H1, 370, Y + H1 + BODY, 'hug');
+dim(370, Y + H1 + BODY, 370, Y + Hh, '64', { ext: X - 6 });
+// note markers sit in clear space
+nb(X + 38 + 484 - 60, Y + 32, 1); nb(X + W - 50, Y + H1 + 32, 2); nb(X + W - 14 - 96 - 22, Y + H1 + BODY + 32, 3); nb(X + W / 2 + 120, 92, 4);
+text(X + W / 2, 448, 'Front · W = 600', 'cap');
+notes(500, [
+  'Title slot flexes and wraps. The header grows past 64',
+  'The body well sits 4 inside the card. Its radius is 16 − 1 − 4 = 11',
+  'Action and trail hug their content and never shrink',
+  'Width stays between 420 and 680. Height hugs content',
+]);
+
+/* ---------- Figure 2 · exploded, oblique (0.6 × front units) ---------- */
+begin('stack');
+Object.assign(OB, { ox: 640, oy: 610 });
+const s = 0.6, w = W * s, h = Hh * s, gap = 170, zs = [0, gap, 2 * gap, 3 * gap]; // shadow, container, well, slots
+const zTop = zs[3], Z = i => zs[i]; // z counts up from the lowest layer
+// projection lines through the container's four corners, drawn first so layers cover them
+[[0, 0], [w, 0], [0, h], [w, h]].forEach(([x, y]) => { const [x1, y1] = P(x, y, zTop); const [, y2] = P(x, y, 0); line(x1, y1, x1, y2, 'axis'); });
+// 4 · shadow footprint (envelope 56 / 24 / 88 at 0.6), hatched
+const e2 = 56 * s, e1 = 24 * s, e3 = 88 * s;
+let g = layer(Z(0)); rect(-e2, -e1, w + 2 * e2, h + e1 + e3, 40 * s, 'hatch', { fill: HATCH }, g);
+// 3 · container
+g = layer(Z(1)); rect(0, 0, w, h, 16 * s, 'obj', {}, g);
+// 2 · body well
+g = layer(Z(2)); rect(0, 0, w, h, 16 * s, 'part', {}, g); rect(4 * s, (H1 + 4) * s, w - 8 * s, (BODY - 8) * s, 11 * s, 'mat', {}, g);
+// 1 · slots, action pill as the focus
+g = layer(Z(3)); rect(0, 0, w, h, 16 * s, 'part', {}, g);
+rect(38 * s, 21 * s, 484 * s, 22 * s, 4, 'slot', {}, g);
+rect(16 * s, (H1 + 16) * s, (W - 32) * s, 32 * s, 4, 'slot', {}, g);
+rect(14 * s, (H1 + BODY + 21) * s, 464 * s, 22 * s, 4, 'slot', {}, g);
+rect((W - 110) * s, (H1 + BODY + 14) * s, 96 * s, 36 * s, 18 * s, 'focus', {}, g);
+// labels on the left, dot on each layer's leftmost corner (0, h)
+[['Slots', 3], ['Body well', 2], ['Container', 1], ['Shadow', 0]].forEach(([n, i]) => {
+  const yy = i === 0 ? h + e3 : h, xx = i === 0 ? -e2 : 0;
+  const [px, py] = P(xx, yy, Z(i)); label(px, py, 400, py, n);
+});
+text(720, 856, 'Exploded · oblique · gaps not to scale', 'cap');
+</script>
+</body>
+</html>

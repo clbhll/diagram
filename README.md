@@ -28,7 +28,7 @@ This repo teaches your agent to draw **your components** the same way. A card or
 skills/
 ├── dimensional-drawing/          the drawing skill
 │   ├── SKILL.md
-│   └── examples/                 card + dialog sheets (single HTML files)
+│   └── examples/                 card diagram + card/dialog spec sheets (single HTML files)
 └── dimensional-drawing-motion/   turns a sheet into a ~10 s film
     ├── SKILL.md
     ├── templates/                reference scene + stylesheet
@@ -72,7 +72,7 @@ Ask for a drawing and point at the source (a repo file, a Storybook story, a URL
 
 > Draw the anatomy of our settings dialog, same style as the examples
 
-You get a title block with the key variables on top, then one dense sheet: notes, plan view, exploded layers, detail views (nested corner, radii, body), and variable tables.
+By default you get **diagram mode**: one calm line figure per idea, a few real dimensions, numbered parts and a short notes list (see `examples/card-diagram.html`). Ask for a spec sheet and you get a title block with the key variables on top, then one dense sheet: notes, plan view, exploded layers, detail views (nested corner, radii, body), and variable tables.
 
 It works for physical things too (third-angle views, mm, published specs only). Try a thermos 🫖.
 
