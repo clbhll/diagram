@@ -5,7 +5,7 @@ description: Turn a finished dimensional drawing sheet into a ~10 s Apple-style 
 
 # Dimensional drawing → motion
 
-Animate a sheet made with the `dimensional-drawing` skill. The film reads like a pen drawing the sheet while a camera moves over it. Same rules as the drawing: monochrome, slots not content, variable codes, unbranded.
+Animate a sheet made with the `diagram` skill (spec mode). The film reads like a pen drawing the sheet while a camera moves over it. Same rules as the drawing: monochrome, slots not content, variable codes, unbranded.
 
 Start from `templates/scene-dialog.js` + `templates/base.css`. It is the reference film (11 s, 1920×1080, 60 fps). Adapt it; do not start blank.
 

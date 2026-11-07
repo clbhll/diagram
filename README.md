@@ -26,7 +26,7 @@ This repo teaches your agent to draw **your components** the same way. A card or
 
 ```
 skills/
-├── dimensional-drawing/          the drawing skill
+├── diagram/                      the drawing skill
 │   ├── SKILL.md
 │   └── examples/                 card diagram + card/dialog spec sheets (single HTML files)
 └── dimensional-drawing-motion/   turns a sheet into a ~10 s film
@@ -56,7 +56,7 @@ git clone https://github.com/enesozturk/dimensional-drawing
 cp -r dimensional-drawing/skills/* ~/.claude/skills/
 ```
 
-**claude.ai / Claude desktop:** zip a skill folder (for example `skills/dimensional-drawing`) and add it under *Settings → Capabilities → Skills*.
+**claude.ai / Claude desktop:** zip a skill folder (for example `skills/diagram`) and add it under *Settings → Capabilities → Skills*.
 
 **Any other agent** (Codex, Cursor, Gemini CLI, …): use the [`skills`](https://skills.sh) CLI, or point your agent at the `SKILL.md` files.
 
@@ -105,7 +105,7 @@ The scene is a pure function of time, so it runs in two places:
 
 <img src="assets/card-sheet.png" alt="Dimensional drawing of a card component" width="100%">
 
-Open the HTML versions in [`skills/dimensional-drawing/examples`](skills/dimensional-drawing/examples). The full film is [`assets/dialog-motion.mp4`](assets/dialog-motion.mp4).
+Open the HTML versions in [`skills/diagram/examples`](skills/diagram/examples). The full film is [`assets/dialog-motion.mp4`](assets/dialog-motion.mp4).
 
 ## Thanks 💌
 

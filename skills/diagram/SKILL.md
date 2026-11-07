@@ -1,9 +1,9 @@
 ---
-name: dimensional-drawing
+name: diagram
 description: Make a monochrome dimensional drawing of a UI component or physical product. Two modes — diagram (default; a calm line figure with a few real dimensions and short labels or notes — front views, before/after, sequences, token scales, oblique or flat exploded stacks — for articles and docs) and spec sheet (Apple-style title block plus one dense sheet with variable-coded dimensions and tables). Use when asked for a dimensional drawing, diagram, figure, anatomy, exploded view, spec sheet or redline of a component.
 ---
 
-# Dimensional drawing
+# Diagram
 
 ## Pick a mode
 
