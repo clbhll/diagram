@@ -10,7 +10,7 @@ Playwright opens `player.html`, calls the scene's `render(t)` for every frame, s
 ## Run
 
 ```bash
-cd skills/dimensional-drawing-motion/adapters/headless
+cd skills/diagram-motion/adapters/headless
 npm install            # installs playwright + its chromium
 
 # the reference dialog film

@@ -2,7 +2,7 @@
   <img src="assets/dialog-motion.gif" alt="A dialog component's dimensional drawing drawing itself: header close-up, pull back to the plan view, layers lifting into an exploded view, then the full sheet" width="100%">
 </p>
 
-<h1 align="center">dimensional-drawing ✏️📐</h1>
+<h1 align="center">diagram ✏️📐</h1>
 
 <p align="center">
   <b>Give it a UI component, get back a one-page technical drawing of it.</b><br>
@@ -29,7 +29,7 @@ skills/
 ├── diagram/                      the drawing skill
 │   ├── SKILL.md
 │   └── examples/                 card diagram + card/dialog spec sheets (single HTML files)
-└── dimensional-drawing-motion/   turns a sheet into a ~10 s film
+└── diagram-motion/               turns a sheet into a ~10 s film
     ├── SKILL.md
     ├── templates/                reference scene + stylesheet
     └── adapters/
@@ -52,8 +52,8 @@ skills/
 **Claude Code**
 
 ```bash
-git clone https://github.com/enesozturk/dimensional-drawing
-cp -r dimensional-drawing/skills/* ~/.claude/skills/
+git clone https://github.com/clbhll/diagram
+cp -r diagram/skills/* ~/.claude/skills/
 ```
 
 **claude.ai / Claude desktop:** zip a skill folder (for example `skills/diagram`) and add it under *Settings → Capabilities → Skills*.
@@ -61,7 +61,7 @@ cp -r dimensional-drawing/skills/* ~/.claude/skills/
 **Any other agent** (Codex, Cursor, Gemini CLI, …): use the [`skills`](https://skills.sh) CLI, or point your agent at the `SKILL.md` files.
 
 ```bash
-npx skills add enesozturk/dimensional-drawing
+npx skills add clbhll/diagram
 ```
 
 ## Use it
@@ -90,7 +90,7 @@ The scene is a pure function of time, so it runs in two places:
 | | |
 |---|---|
 | **With Claude** | ask *"animate this drawing"*. Claude builds it in the **Motion** artifact and you export MP4. This is the primary target and where the timing was tuned. |
-| **Without Claude** | `cd skills/dimensional-drawing-motion/adapters/headless && npm install`, then `node render.mjs --scene ../../templates/scene-dialog.js --css ../../templates/base.css --out dialog.mp4`. Needs Node 18+ and ffmpeg. |
+| **Without Claude** | `cd skills/diagram-motion/adapters/headless && npm install`, then `node render.mjs --scene ../../templates/scene-dialog.js --css ../../templates/base.css --out dialog.mp4`. Needs Node 18+ and ffmpeg. |
 
 > [!NOTE]
 > Optimized for Claude Motion. The headless renderer is tested with Playwright (Chromium) + ffmpeg. Other animation libraries (Remotion, Motion Canvas, GSAP, Lottie…) are **not tested**.
@@ -114,4 +114,4 @@ Open the HTML versions in [`skills/diagram/examples`](skills/diagram/examples). 
 
 ## License
 
-MIT © Enes Ozturk. Draw all the things.
+MIT © Enes Ozturk. Draw all the things. Forked from [enesozturk/dimensional-drawing](https://github.com/enesozturk/dimensional-drawing).

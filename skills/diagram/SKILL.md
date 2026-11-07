@@ -135,6 +135,6 @@ Pitfalls: a CSS `fill` rule on a class overrides a `fill="url(#hatch)"` attribut
 - No brand text; no color (grep for hex values outside the gray tokens); no content-dependent widths.
 - Render once with Playwright at 1800 px wide, look at the screenshot for overlapping labels and elements crossing the sheet border, fix in one pass, then deliver (publish as an Artifact on claude.ai, or save the .html).
 
-To animate the finished sheet, use the `dimensional-drawing-motion` skill.
+To animate the finished sheet, use the `diagram-motion` skill.
 
 Reply in one or two sentences: what was drawn, and any [TBD] values the team should define.

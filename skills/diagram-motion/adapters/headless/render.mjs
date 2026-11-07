@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Render a dimensional-drawing motion scene to MP4 without Claude.
+// Render a diagram motion scene to MP4 without Claude.
 // Playwright (Chromium) draws each frame as a pure function of time,
 // ffmpeg encodes the frames. No Remotion, no license needed.
 //
